@@ -78,7 +78,7 @@ const ProfileCard = ({ user, repos, orgs, gists }) => {
           </a>
 
           {user.bio && (
-            <div className="profile-bio">
+            <div className="profile-bio" style={{color : 'white'}}>
               <p>{user.bio}</p>
             </div>
           )}
@@ -144,7 +144,7 @@ const ProfileCard = ({ user, repos, orgs, gists }) => {
       <div className="stats-grid">
         <div className="stat-card stat-purple">
           <div className="stat-number">{user.followers.toLocaleString()}</div>
-          <div className="stat-label">Followers</div>
+          <div className="stat-label" >Followers</div>
         </div>
         <div className="stat-card stat-blue">
           <div className="stat-number">{user.following.toLocaleString()}</div>
@@ -156,15 +156,15 @@ const ProfileCard = ({ user, repos, orgs, gists }) => {
         </div>
         <div className="stat-card stat-orange">
           <div className="stat-number">{user.public_gists?.toLocaleString() || 0}</div>
-          <div className="stat-label">Gists</div>
+          <div className="stat-label" style={{color : 'black'}}>Gists</div>
         </div>
         <div className="stat-card stat-pink">
           <div className="stat-number">{totalStars.toLocaleString()}</div>
-          <div className="stat-label">Total Stars</div>
+          <div className="stat-label" style={{color : 'black'}}>Total Stars</div>
         </div>
         <div className="stat-card stat-cyan">
           <div className="stat-number">{totalForks.toLocaleString()}</div>
-          <div className="stat-label">Total Forks</div>
+          <div className="stat-label" style={{color : 'black'}}>Total Forks</div>
         </div>
       </div>
 
@@ -225,7 +225,7 @@ const ProfileCard = ({ user, repos, orgs, gists }) => {
                 </div>
                 
                 {repo.description && (
-                  <p className="repo-description" >{repo.description}</p>
+                  <p className="repo-description" style={{color : 'black'}}>{repo.description}</p>
                 )}
                 
                 <div className="repo-footer">
