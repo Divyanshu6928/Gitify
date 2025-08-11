@@ -1,14 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { RefreshCw, Settings, Calendar, BarChart3 } from 'lucide-react';
+import { RefreshCw, Settings, Calendar, BarChart3, Sliders } from 'lucide-react';
 import '../styles/ContributionsHeatmap.css';
 
-const ContributionsHeatmap = ({ 
-  contributions, 
-  username, 
-  config = {},
-  onDateSelect,
-  onStatsChange 
-}) => {
+const ContributionsHeatmap = ({ contributions, username, config = {}, onDateSelect, onStatsChange }) => {
   // Core state
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(new Date());
@@ -48,8 +42,9 @@ const ContributionsHeatmap = ({
   // Interactive state
   const [selectedDate, setSelectedDate] = useState(null);
   const [showControls, setShowControls] = useState(false);
+  const [showLevelEditor, setShowLevelEditor] = useState(false);
   
-  // Contribution level configuration
+  // **ENHANCED: Dynamic Contribution Level Configuration**
   const [contributionLevels, setContributionLevels] = useState([
     { min: 0, max: 0, color: '#ebedf0', label: 'No contributions' },
     { min: 1, max: 3, color: '#9be9a8', label: 'Low activity' },
@@ -57,6 +52,10 @@ const ContributionsHeatmap = ({
     { min: 7, max: 10, color: '#30a14e', label: 'High activity' },
     { min: 11, max: Infinity, color: '#216e39', label: 'Very high activity' }
   ]);
+  
+  // **NEW: Auto-calculate levels based on data**
+  const [useAutoLevels, setUseAutoLevels] = useState(false);
+  const [levelStrategy, setLevelStrategy] = useState('percentile'); // 'percentile', 'quartile', 'custom'
 
   // Initialize available years
   useEffect(() => {
@@ -159,12 +158,64 @@ const ContributionsHeatmap = ({
     return applyFilters(filtered);
   }, [localContributions, getDateRange, applyFilters]);
 
-  // Get contribution level
+  // **ENHANCED: Auto-calculate dynamic contribution levels**
+  const calculateAutoLevels = useCallback(() => {
+    if (!rangeContributions.length) return contributionLevels;
+    
+    const contributionCounts = rangeContributions
+      .map(day => day.contributionCount || 0)
+      .filter(count => count > 0)
+      .sort((a, b) => a - b);
+    
+    if (contributionCounts.length === 0) return contributionLevels;
+    
+    const max = Math.max(...contributionCounts);
+    
+    switch (levelStrategy) {
+      case 'percentile':
+        const p25 = contributionCounts[Math.floor(contributionCounts.length * 0.25)];
+        const p50 = contributionCounts[Math.floor(contributionCounts.length * 0.5)];
+        const p75 = contributionCounts[Math.floor(contributionCounts.length * 0.75)];
+        const p90 = contributionCounts[Math.floor(contributionCounts.length * 0.9)];
+        
+        return [
+          { min: 0, max: 0, color: '#ebedf0', label: 'No contributions' },
+          { min: 1, max: p25, color: '#9be9a8', label: 'Low (0-25th percentile)' },
+          { min: p25 + 1, max: p50, color: '#40c463', label: 'Medium (25-50th percentile)' },
+          { min: p50 + 1, max: p75, color: '#30a14e', label: 'High (50-75th percentile)' },
+          { min: p75 + 1, max: Infinity, color: '#216e39', label: 'Very high (75th+ percentile)' }
+        ];
+        
+      case 'quartile':
+        const q1 = Math.ceil(max * 0.25);
+        const q2 = Math.ceil(max * 0.5);
+        const q3 = Math.ceil(max * 0.75);
+        
+        return [
+          { min: 0, max: 0, color: '#ebedf0', label: 'No contributions' },
+          { min: 1, max: q1, color: '#9be9a8', label: `Low (1-${q1})` },
+          { min: q1 + 1, max: q2, color: '#40c463', label: `Medium (${q1 + 1}-${q2})` },
+          { min: q2 + 1, max: q3, color: '#30a14e', label: `High (${q2 + 1}-${q3})` },
+          { min: q3 + 1, max: Infinity, color: '#216e39', label: `Very high (${q3 + 1}+)` }
+        ];
+        
+      default:
+        return contributionLevels;
+    }
+  }, [rangeContributions, levelStrategy, contributionLevels]);
+
+  // **ENHANCED: Get contribution level with dynamic calculation**
   const getContributionLevel = useCallback((count) => {
-    return contributionLevels.findIndex(level => 
+    const levels = useAutoLevels ? calculateAutoLevels() : contributionLevels;
+    return levels.findIndex(level => 
       count >= level.min && count <= level.max
     );
-  }, [contributionLevels]);
+  }, [contributionLevels, useAutoLevels, calculateAutoLevels]);
+
+  // **ENHANCED: Get active contribution levels**
+  const getActiveContributionLevels = useCallback(() => {
+    return useAutoLevels ? calculateAutoLevels() : contributionLevels;
+  }, [contributionLevels, useAutoLevels, calculateAutoLevels]);
 
   // Calculate live streaks
   const calculateLiveStreaks = useCallback(() => {
@@ -271,6 +322,33 @@ const ContributionsHeatmap = ({
     return weeks;
   }, [getDateRange, rangeContributions, getContributionLevel]);
 
+  // **NEW: Update contribution level**
+  const updateContributionLevel = (index, field, value) => {
+    const newLevels = [...contributionLevels];
+    newLevels[index] = { ...newLevels[index], [field]: value };
+    setContributionLevels(newLevels);
+  };
+
+  // **NEW: Add new contribution level**
+  const addContributionLevel = () => {
+    const lastLevel = contributionLevels[contributionLevels.length - 1];
+    const newLevel = {
+      min: lastLevel.min + 1,
+      max: lastLevel.min + 5,
+      color: '#ff6b6b',
+      label: 'New level'
+    };
+    setContributionLevels([...contributionLevels, newLevel]);
+  };
+
+  // **NEW: Remove contribution level**
+  const removeContributionLevel = (index) => {
+    if (contributionLevels.length > 2) {
+      const newLevels = contributionLevels.filter((_, i) => i !== index);
+      setContributionLevels(newLevels);
+    }
+  };
+
   // Manual refresh function
   const refreshContributions = async () => {
     if (!username) return;
@@ -314,6 +392,7 @@ const ContributionsHeatmap = ({
   // Memoized calculations
   const stats = useMemo(() => calculateDynamicStats(), [calculateDynamicStats]);
   const heatmapData = useMemo(() => generateHeatmapData(), [generateHeatmapData]);
+  const activeContributionLevels = useMemo(() => getActiveContributionLevels(), [getActiveContributionLevels]);
   
   // Notify parent of stats changes
   useEffect(() => {
@@ -349,6 +428,14 @@ const ContributionsHeatmap = ({
         
         <div className="header-controls">
           <button
+            onClick={() => setShowLevelEditor(!showLevelEditor)}
+            className="control-btn"
+            title="Edit Contribution Levels"
+          >
+            <Sliders size={16} />
+          </button>
+          
+          <button
             onClick={() => setShowControls(!showControls)}
             className="control-btn"
             title="Toggle Controls"
@@ -366,6 +453,103 @@ const ContributionsHeatmap = ({
           </button>
         </div>
       </div>
+
+      {/* **NEW: Contribution Level Editor */}
+      {showLevelEditor && (
+        <div className="level-editor-panel">
+          <div className="level-editor-header">
+            <h4>Contribution Level Configuration</h4>
+            <div className="level-strategy">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={useAutoLevels}
+                  onChange={(e) => setUseAutoLevels(e.target.checked)}
+                />
+                Auto-calculate levels
+              </label>
+              
+              {useAutoLevels && (
+                <select
+                  value={levelStrategy}
+                  onChange={(e) => setLevelStrategy(e.target.value)}
+                  className="control-select"
+                >
+                  <option value="percentile">Percentile-based</option>
+                  <option value="quartile">Quartile-based</option>
+                </select>
+              )}
+            </div>
+          </div>
+          
+          {!useAutoLevels && (
+            <div className="level-editor-list">
+              {contributionLevels.map((level, index) => (
+                <div key={index} className="level-editor-item">
+                  <input
+                    type="number"
+                    value={level.min}
+                    onChange={(e) => updateContributionLevel(index, 'min', parseInt(e.target.value))}
+                    className="level-input"
+                    placeholder="Min"
+                  />
+                  <span>to</span>
+                  <input
+                    type="number"
+                    value={level.max === Infinity ? '' : level.max}
+                    onChange={(e) => updateContributionLevel(index, 'max', e.target.value === '' ? Infinity : parseInt(e.target.value))}
+                    className="level-input"
+                    placeholder="Max"
+                  />
+                  <input
+                    type="color"
+                    value={level.color}
+                    onChange={(e) => updateContributionLevel(index, 'color', e.target.value)}
+                    className="level-color"
+                  />
+                  <input
+                    type="text"
+                    value={level.label}
+                    onChange={(e) => updateContributionLevel(index, 'label', e.target.value)}
+                    className="level-label"
+                    placeholder="Label"
+                  />
+                  {contributionLevels.length > 2 && (
+                    <button
+                      onClick={() => removeContributionLevel(index)}
+                      className="level-remove"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              ))}
+              
+              <button
+                onClick={addContributionLevel}
+                className="level-add-btn"
+              >
+                + Add Level
+              </button>
+            </div>
+          )}
+          
+          {useAutoLevels && (
+            <div className="auto-levels-preview">
+              <h5>Auto-calculated levels:</h5>
+              {activeContributionLevels.map((level, index) => (
+                <div key={index} className="level-preview">
+                  <div 
+                    className="level-color-preview"
+                    style={{ backgroundColor: level.color }}
+                  ></div>
+                  <span>{level.label}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Collapsible Controls Panel */}
       {showControls && (
@@ -522,7 +706,7 @@ const ContributionsHeatmap = ({
             <div className="legend-left">
               <span>Less</span>
               <div className="legend-squares">
-                {contributionLevels.map((level, index) => (
+                {activeContributionLevels.map((level, index) => (
                   <div
                     key={index}
                     className={`legend-square level-${index}`}
@@ -552,7 +736,7 @@ const ContributionsHeatmap = ({
         <div className="selected-date-info">
           <h4>Selected Date: {selectedDate.date}</h4>
           <p>Contributions: {selectedDate.count}</p>
-          <p>Level: {contributionLevels[selectedDate.level]?.label}</p>
+          <p>Level: {activeContributionLevels[selectedDate.level]?.label}</p>
         </div>
       )}
     </div>
