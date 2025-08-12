@@ -131,7 +131,7 @@ function App() {
               <Github size={32} />
             </div>
             <div className="logo-text">
-              <h1>GITIFY</h1>
+              <h1>RepoX </h1>
               <p>Advanced GitHub Profile Analytics</p>
             </div>
           </div>

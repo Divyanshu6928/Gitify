@@ -35,7 +35,7 @@ const LandingPage = ({
         />
       </div>
 
-      <h1 className="title">GITIFY</h1>
+      <h1 className="title">RepoX </h1>
       <p className="subtitle">Advanced GitHub Profile Analytics</p>
 
       <div className="search-container">
