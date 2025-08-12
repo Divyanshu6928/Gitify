@@ -120,17 +120,18 @@
   font-size: 2.5rem;
   font-weight: 900;
   margin: 0 0 10px 0;
-  background: linear-gradient(45deg, #c7007d, #00ffff);
-  -webkit-background-clip: text;
+  /* background: linear-gradient(45deg, #c7007d, #00ffff); */
+  /* -webkit-background-clip: text; */
+  color: #ffffff;
   background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
+  /* -webkit-text-fill-color: transparent; */
+  /* color: transparent; */
   font-family: 'Orbitron', sans-serif;
 }
 
 .profile-username {
   font-size: 1.3rem;
-  color: #c7007d;
+  color: #afa8a8;
   text-decoration: none;
   font-weight: 600;
   margin-bottom: 20px;
