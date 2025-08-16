@@ -33,7 +33,7 @@ const ActivityGraph = ({ username }) => {
     <div className="activity-graph">
       <div className="graph-header">
         <h3>Activity Graph</h3>
-        <div className="graph-badge">12 Months</div>
+        <div className="graph-badge">1 Month</div>
       </div>
       <div className="graph-content">
         {!imageLoaded && (

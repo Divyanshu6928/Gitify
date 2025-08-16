@@ -72,7 +72,7 @@ const LandingPage = ({
       </div>
 
       <footer className="footer">
-        Made with <span className="emoji">🧠</span> by Divyanshu (DG)
+        
       </footer>
     </div>
   );

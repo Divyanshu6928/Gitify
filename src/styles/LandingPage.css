@@ -9,6 +9,7 @@
   font-family: 'Montserrat', sans-serif;
   position: relative;
   overflow: hidden;
+  /* overflow-y: scroll; */
 }
 
 .stars-background {
@@ -295,8 +296,9 @@
 }
 
 .footer {
-  position: absolute;
-  bottom: 20px;
+  margin-top: 100px;
+  /* position: absolute; */
+  /* bottom: 20px; */
   font-family: 'Montserrat', sans-serif;
   font-size: 14px;
   color: rgba(255, 255, 255, 0.7);
